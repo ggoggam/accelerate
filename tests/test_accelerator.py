@@ -611,6 +611,18 @@ class AcceleratorTester(AccelerateTestCase):
         model_loaded = pickle.loads(pickle.dumps(model))
         model_loaded(inputs)
 
+    def test_can_unwrap_distributed_compiled_model(self):
+        model = create_components()[0]
+        accelerator = Accelerator()
+
+        compiled_model = torch.compile(model)
+
+        distributed_model = torch.nn.DataParallel(model)
+        distributed_compiled_model = torch.compile(distributed_model)
+        unwrapped_model = accelerator.unwrap_model(distributed_compiled_model)
+
+        assert compiled_model._orig_mod == unwrapped_model
+
     @parameterized.expand([True, False])
     def test_can_pickle_dataloader(self, dispatch_batches):
         """
